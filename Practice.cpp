@@ -2,8 +2,35 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
-
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+	glViewport(0, 0, width, height);
+}
 int main() {
+
+	glfwInit();
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	//glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+	GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
+	if (window == NULL)
+	{
+		std::cout << "Failed to create GLFW window" << std::endl;
+		glfwTerminate();
+		return -1;
+	}
+	glfwMakeContextCurrent(window);
+
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		std::cout << "Failed to initialize GLAD" << std::endl;
+		return -1;
+	}
+
+	glViewport(0, 0, 800, 600);
+
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	//create two triangles, the one on top is oriented base-down, and the one below it is oriented base-up
 
 	//triangle one oriented normally
@@ -47,9 +74,7 @@ int main() {
 	//type of buffer, size of the data in bytes, the actual data, and how the graphics card should manage the given data
 	glBufferData(GL_ARRAY_BUFFER, sizeof(triangleOneVerticies), triangleOneVerticies, GL_STATIC_DRAW);
 
-
 	//Now, open gl requires that we set up at least one vertex and one fragment shader.
-
 		//VERTEX SHADER
 
 	const char* vertexShaderSource = "#version 330 core\n"
@@ -111,10 +136,7 @@ int main() {
 	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
 	glCompileShader(fragmentShader);
-
-
 	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-
 	if (!success) {
 		//if no success, log it
 		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
@@ -122,9 +144,7 @@ int main() {
 	}
 
 	//Now we have compiled both the vertex shader and the fragment shader
-
 	//Remember, the vertex shader determines where each pixel is drawn, fragment shader determines the color per pixel
-
 
 	//The Shader Program:
 	//This is the final linked version of multiple shaders combined. We must link the previous shader to this program in order to 
@@ -141,7 +161,7 @@ int main() {
 	//attach the fragment shader to the program
 	glAttachShader(shaderProgram, fragmentShader);
 
-
+	glLinkProgram(shaderProgram);
 	//Get the result of shader program creation and store it in success
 	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
 
@@ -156,9 +176,7 @@ int main() {
 
 	//we should also now delete the shader objects because we no longer need them
 	glDeleteShader(vertexShader);
-
 	glDeleteShader(fragmentShader);
-	
 
 	//At this point, we have sent the shader data to the gpu and instructed it how it should process the vertex data with said shaders
 	//Opengl still does not know how to interpret the vertex data in memory, and how it should connect this data to the 
@@ -179,7 +197,7 @@ int main() {
 	// size of a float away from the next
 	//finally we say if there's an offset from the first value, which there isn't
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-
+	glEnableVertexAttribArray(0);
 	//The data which the attributes take their data from is determined by the VBO currently bound to the GL_ARRAY_BUFFER when calling glvertexattribpointer. 
 	//We never unbound the previous VBO, so vertex attribute zero is now associated with that vertex data
 
@@ -188,11 +206,27 @@ int main() {
 
 	unsigned int VAO;
 	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
+	    // 1. bind Vertex Array Object
+    glBindVertexArray(VAO);
+    // 2. copy our vertices array in a buffer for OpenGL to use
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(triangleOneVerticies), triangleOneVerticies, GL_STATIC_DRAW);
+    // 3. then set our vertex attributes pointers
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
 
-	//the primitive type we want to draw, the starting index of the array, and the number of verticies to draw
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	while (!glfwWindowShouldClose(window))
+	{
+		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glUseProgram(shaderProgram);
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glfwSwapBuffers(window);
+		glfwPollEvents();
 
-
+	}
+	glfwTerminate();
+	return 0;
 
 }
